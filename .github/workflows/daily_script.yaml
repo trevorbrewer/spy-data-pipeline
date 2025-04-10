@@ -29,4 +29,4 @@ jobs:
     # Step 4: Run your Python script
     - name: Run daily script
       run: |
-        python your_script.py  # Replace 'your_script.py' with the name of your script
+        python scripts/get_prior_day.py  # Replace 'your_script.py' with the name of your script

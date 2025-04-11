@@ -4,8 +4,8 @@ on:
   push:
     branches: [ main ]
   schedule:
-    # Runs at 8 AM every weekday (UTC)
-    - cron: '0 2 * * 1-5'
+    # Runs at 2 AM tuesday to saturday (looking a day back so it pulls M-F data)
+    - cron: '0 2 * * 2-6'
 
 jobs:
   run-script:

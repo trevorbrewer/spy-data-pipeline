@@ -47,7 +47,7 @@ def load_existing_csv_from_s3(bucket_name, file_name):
         # Download file from S3
         csv_file_obj = s3.get_object(Bucket=bucket_name, Key=file_name)
         csv_file_body = csv_file_obj['Body'].read().decode('utf-8')
-        df_existing = pd.read_csv(StringIO(csv_file_body), index_col='datetime', parse_dates=True)
+        df_existing = pd.read_csv(StringIO(csv_file_body), index_col='timestamp', parse_dates=True)
         return df_existing
     except Exception as e:
         print(f"Error loading file from S3: {e}")

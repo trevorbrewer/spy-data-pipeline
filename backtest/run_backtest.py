@@ -1,7 +1,11 @@
 import backtrader as bt
 import pandas as pd
-from scripts.uptrend_buy_signal import DailyTrendStrategy
+from strategy.uptrend_buy_signal import DailyTrendStrategy
 from s3_utils.s3_loader import download_s3_file
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 class PandasDataWithDatetime(bt.feeds.PandasData):
     params = (

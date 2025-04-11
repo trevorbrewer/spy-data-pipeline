@@ -1,6 +1,8 @@
 name: Run Daily Python Script
 
 on:
+  push:
+    branches: [ main ]
   schedule:
     # Runs at 8 AM every weekday (UTC)
     - cron: '0 2 * * 1-5'

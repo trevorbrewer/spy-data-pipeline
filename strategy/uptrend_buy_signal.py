@@ -2,6 +2,7 @@ import backtrader as bt
 import pandas as pd
 import pytz
 from datetime import time
+import csv
 
 class DailyTrendStrategy(bt.Strategy):
     def __init__(self):
@@ -16,7 +17,9 @@ class DailyTrendStrategy(bt.Strategy):
         self.closepoint2 = None
         self.trendline = None
 
+        self.dataclose = {data: data.close for data in self.datas}
         self.order = None
+        self.trades = []  # To store trade logs
         self.stop_order = None
         self.take_order = None
         self.openProfitFocus = None
@@ -66,10 +69,10 @@ class DailyTrendStrategy(bt.Strategy):
 
         # Buy Conditions
         if trading_session and self.trendline:
-            price = self.data.close[0]
+            # price = self.data.close[0]
             open_ = self.data.open[0]
             close = self.data.close[0]
-            high = self.data.high[0]
+            # high = self.data.high[0]
             low = self.data.low[0]
 
             cond1 = low < self.trendline and open_ < close and open_ > self.trendline
@@ -78,14 +81,14 @@ class DailyTrendStrategy(bt.Strategy):
 
             if trendBuyCondition and not self.position:
                 self.trade_open_price = close
-                stop_price = close - 20
-                take_profit_price = close + 40
-                self.openProfitFocus = close + 35
+                stop_price = close*0.997
+                take_profit_price = close*1.01
+                self.openProfitFocus = close*1.01
                 self.openOneCandle = len(self) + 1
 
-                self.order = self.buy()
-                self.stop_order = self.sell(exectype=bt.Order.Stop, price=stop_price)
-                self.take_order = self.sell(exectype=bt.Order.Limit, price=take_profit_price)
+                self.order = self.buy(size=100)
+                self.stop_order = self.sell(exectype=bt.Order.Stop, price=stop_price,size=100)
+                self.take_order = self.sell(exectype=bt.Order.Limit, price=take_profit_price,size=100)
 
         # Exits
         if self.position:
@@ -97,6 +100,64 @@ class DailyTrendStrategy(bt.Strategy):
                 self.close()
             elif not trading_session:
                 self.close()
+
+    def notify_order(self, order):
+        if order.status in [order.Submitted, order.Accepted]:
+            return
+
+        data = order.data
+        symbol = data._name
+
+        if order.status in [order.Completed]:
+            if order.isbuy():
+                self.log(f"BUY EXECUTED: {symbol} @ {order.executed.price:.2f}")
+                self.order_type = "BUY"
+            else:
+                self.log(f"SELL EXECUTED: {symbol} @ {order.executed.price:.2f}")
+                self.order_type = "SELL"
+
+            self.trades.append({
+                'datetime': self.data.datetime.datetime().strftime("%Y-%m-%d %H:%M:%S"),
+                'symbol': symbol,
+                'type': self.order_type,
+                'price': order.executed.price,
+                'size': order.executed.size,
+                'value': order.executed.value,
+                'commission': order.executed.comm,
+                'pnl': 0
+            })
+
+        elif order.status in [order.Canceled, order.Margin, order.Rejected]:
+            self.log(f"ORDER FAILED for {symbol}")
+
+        self.order = None
+
+
+    def notify_trade(self, trade):
+        if trade.isclosed:
+            symbol = trade.data._name
+            self.log(f"TRADE CLOSED: {symbol} Profit: {trade.pnl:.2f}")
+            self.trades.append({
+                'datetime': self.data.datetime.datetime().strftime("%Y-%m-%d %H:%M:%S"),
+                'symbol': symbol,
+                'type': 'CLOSE',
+                'price': trade.price,
+                'size': trade.size,
+                'commission': 0,
+                'pnl': trade.pnl
+            })
+
+
+    def log(self, txt):
+        dt = self.datas[0].datetime.datetime(0)
+        print(f'{dt.isoformat()}, {txt}')
+
+
+    def stop(self):
+        with open('data/trade_report.csv', 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=self.trades[0].keys())
+            writer.writeheader()
+            writer.writerows(self.trades)
 
 # print("✅ Module loaded!")
 # print(DailyTrendStrategy)

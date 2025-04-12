@@ -10,7 +10,7 @@ from s3_utils.s3_loader import download_s3_file
 from datetime import datetime, timedelta
 
 # Filter to the last year of data
-one_year_ago = pd.Timestamp.now(tz='UTC') - pd.DateOffset(years=1)
+one_year_ago = pd.Timestamp.now(tz='UTC') - pd.DateOffset(days=7)
 
 
 class PandasDataWithDatetime(bt.feeds.PandasData):
@@ -49,7 +49,7 @@ def run_backtest():
     print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
     cerebro.run()
     print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
-    cerebro.plot(style='candlestick')
+    # cerebro.plot(style='candlestick')
 
 if __name__ == "__main__":
     run_backtest()

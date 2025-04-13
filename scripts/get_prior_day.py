@@ -3,11 +3,11 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
-from alpaca.data.timeframe import TimeFrame
+from alpaca.data.timeframe import TimeFrame 
 from io import StringIO
 import boto3
 import pandas as pd
-from s3_utils.s3_loader import download_s3_file
+import pytz
 
 # Load environment variables
 load_dotenv()
@@ -24,15 +24,26 @@ S3_FILE_NAME = 'spy_min_data.csv'  # Change to your file name if different
 # Initialize the S3 client
 s3 = boto3.client('s3')
 
+# Set timezone to Eastern
+eastern = pytz.timezone('US/Eastern')
 
-# Build request
+# Get yesterday's date in Eastern Time
+now_eastern = datetime.now(tz=eastern)
+yesterday = now_eastern - timedelta(days=2)
+
+# Set start to 4:00 AM and end to 8:00 PM (cover full extended hours)
+start = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+end = yesterday.replace(hour=23, minute=59, second=59, microsecond=0)
+
+# Create request
 request = StockBarsRequest(
-    symbol_or_symbols="SPY",
-    start=datetime.now() - timedelta(days=2),
-    end=datetime.now() - timedelta(days=1),
+    symbol_or_symbols=["SPY"],
+    start=start,
+    end=end,
     timeframe=TimeFrame.Minute,
-    feed="sip",  # <- goes here
- )
+    feed="sip",
+    include_extended_hours=True
+)
 
 
 # Fetch data
@@ -56,16 +67,23 @@ def upload_to_s3(df, bucket_name, file_name):
         print(f"Error uploading file to S3: {e}")
 
 
+def download_s3_file(local_path='data/spy_minute_data.csv'):
+    bucket = os.getenv("S3_BUCKET_NAME")
+    s3_key = os.getenv("S3_DATA_PATH")
+
+    s3 = boto3.client("s3")
+    os.makedirs(os.path.dirname(local_path), exist_ok=True)
+    s3.download_file(bucket, s3_key, local_path)
+    return local_path
+
+
 # Load the existing CSV file from S3
 data_path = download_s3_file()
 df_existing = pd.read_csv(data_path,dtype={'symbol':'str','timestamp':'str','open':'float64','high':'float64','low':'float64',
                                       'close':'float64','volume':'int64'},low_memory=False)
 
-print(df_new_data.head())
-print(df_existing.head())
+# Append the new data to the existing data
+df_combined = pd.concat([df_existing, df_new_data])
 
-# # Append the new data to the existing data
-# df_combined = pd.concat([df_existing, df_new_data])
-
-# # Upload the updated file to S3
-# upload_to_s3(df_combined, S3_BUCKET_NAME, S3_FILE_NAME)
+# Upload the updated file to S3
+upload_to_s3(df_combined, S3_BUCKET_NAME, S3_FILE_NAME)

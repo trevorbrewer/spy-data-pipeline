@@ -39,7 +39,7 @@ def upload_to_s3(df):
 request_params = StockBarsRequest(
     symbol_or_symbols="SPY",
     start="2016-01-01",
-    end="2025-04-11",
+    end="2025-04-12",
     timeframe=TimeFrame.Minute,
     feed="sip"  # <- goes here
 )

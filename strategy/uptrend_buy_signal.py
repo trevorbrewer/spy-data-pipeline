@@ -110,10 +110,10 @@ class DailyTrendStrategy(bt.Strategy):
 
         if order.status in [order.Completed]:
             if order.isbuy():
-                self.log(f"BUY EXECUTED: {symbol} @ {order.executed.price:.2f}")
+                # self.log(f"BUY EXECUTED: {symbol} @ {order.executed.price:.2f}")
                 self.order_type = "BUY"
             else:
-                self.log(f"SELL EXECUTED: {symbol} @ {order.executed.price:.2f}")
+                # self.log(f"SELL EXECUTED: {symbol} @ {order.executed.price:.2f}")
                 self.order_type = "SELL"
 
             self.trades.append({
@@ -136,7 +136,7 @@ class DailyTrendStrategy(bt.Strategy):
     def notify_trade(self, trade):
         if trade.isclosed:
             symbol = trade.data._name
-            self.log(f"TRADE CLOSED: {symbol} Profit: {trade.pnl:.2f}")
+            # self.log(f"TRADE CLOSED: {symbol} Profit: {trade.pnl:.2f}")
             self.trades.append({
                 'datetime': self.data.datetime.datetime().strftime("%Y-%m-%d %H:%M:%S"),
                 'symbol': symbol,
@@ -150,7 +150,7 @@ class DailyTrendStrategy(bt.Strategy):
 
     def log(self, txt):
         dt = self.datas[0].datetime.datetime(0)
-        print(f'{dt.isoformat()}, {txt}')
+        # print(f'{dt.isoformat()}, {txt}')
 
 
     def stop(self):

@@ -10,7 +10,7 @@ from s3_utils.s3_loader import download_s3_file
 from datetime import datetime, timedelta
 
 # Filter to the last year of data
-one_year_ago = pd.Timestamp.now(tz='UTC') - pd.DateOffset(days=7)
+one_year_ago = pd.Timestamp.now(tz='UTC') - pd.DateOffset(days=4)
 
 
 class PandasDataWithDatetime(bt.feeds.PandasData):
@@ -27,9 +27,9 @@ class PandasDataWithDatetime(bt.feeds.PandasData):
 def run_backtest():
     data_path = download_s3_file()
 
-    df = pd.read_csv(data_path,dtype={'Unnamed: 0':'str','symbol':'str','open':'float64','high':'float64','low':'float64',
+    df = pd.read_csv(data_path,dtype={'symbol':'str','timestamp':'str','open':'float64','high':'float64','low':'float64',
                                       'close':'float64','volume':'int64'},low_memory=False)
-    df.rename(columns={ df.columns[0]: "datetime" }, inplace = True)
+    df.rename(columns={ df.columns[1]: "datetime" }, inplace = True)
     df = df.iloc[:, :7]
     df['datetime'] = pd.to_datetime(df['datetime'], errors='coerce')
     df = df.dropna(subset=['datetime'])  # drop rows with invalid datetime
